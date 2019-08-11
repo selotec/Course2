@@ -1,0 +1,26 @@
+.button{
+    -fx-background-color: #DDDDDD;
+    -fx-font-family: Tahoma;
+    -fx-font-size: 20;
+    -fx-border-width: 1;
+    -fx-border-color: #B8B8B8;
+    -fx-focus-color: transparent;
+}
+.button:hover{
+    -fx-background-color: #EDEDED;
+}
+
+.text-area{
+    -fx-font-family: Tahoma;
+    -fx-font-size: 20;
+    -fx-focus-color: transparent;
+}
+
+.text-area .content{
+    -fx-background-color: #DDDDDD;
+}
+
+.text-field{
+    -fx-font-size: 20;
+    -fx-focus-color: transparent;
+}
