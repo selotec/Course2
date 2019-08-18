@@ -42,6 +42,14 @@ public class ClientHandler {
                     //цикл работы
                     while (true) {
                         String str = in.readUTF();
+                        // О чем говорилось в конце вебинара - при помощи limit отделяем сообщение от служебных команд
+                        String[] whisper = str.split(" ", 3);
+                        // Если клиент запросил отправку приватного сообщения
+                        if (whisper[0].equals("/w")) {
+                            // Просим сервер переслать сообщение только адресату
+                            server.proxyPrivateMessage(whisper[2], whisper[1]);
+                            continue;
+                        }
                         if (str.equals("/end")) {
                             break;
                         }

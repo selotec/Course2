@@ -48,6 +48,15 @@ public class Controller {
 
     }
 
+    /*
+        Пытался создать текстовый лейбл, в который можно было бы передавать никнейм (чтоб не путаться между окнами клиентов).
+        Клиент хэндлер возвращал ответ вида /authok nick1, я разбивал эту строку, чтобы получить никнейм.
+        Далее менялся текст лейбла, лейбл делался видимым.
+        Но при запуске получил исключение - java.lang.IllegalStateException: Not on FX application thread
+        На стековерфлоу говорят нужно использовать Platform.runLater(new Runnable(),
+        например тут https://stackoverflow.com/questions/49343256/threads-in-javafx-not-on-fx-application-thread
+        Но так и не понял, почему например textArea мы спокойно меняем, а при изменении лейбла получаем исключение.
+     */
 
     public void connect(){
         try {

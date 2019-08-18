@@ -37,9 +37,32 @@ public class Server {
         }
     }
 
+    // Ищем и возвращаем клиент хэндлер по заданному нику, либо null
+    public ClientHandler getClientByNick(String nick) {
+        ClientHandler requested = null;
+
+        for(ClientHandler ch: clients) {
+            if(ch.nick.equals(nick)) {
+                requested = ch;
+                break;
+            }
+        }
+
+        return requested;
+    }
+
     public void broadcastMsg(String msg){
         for (ClientHandler c:clients ) {
             c.sendMSG(msg);
+        }
+    }
+
+    // Пересылаем приватное сообщение только запрошенному адресату
+    public void proxyPrivateMessage(String msg, String nick) {
+        ClientHandler requested = getClientByNick(nick);
+        // Только если такой ник существует
+        if (requested != null) {
+            requested.sendMSG("Whisper from " + nick + ": " + msg);
         }
     }
 
