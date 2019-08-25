@@ -1,4 +1,4 @@
-package server;
+package lesson8.server;
 
 import java.sql.*;
 
