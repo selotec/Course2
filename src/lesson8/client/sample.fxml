@@ -5,10 +5,10 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.ListView?>
-<VBox fx:controller="client.Controller"
+<VBox fx:controller="lesson8.client.Controller"
       xmlns:fx="http://javafx.com/fxml" alignment="center" >
 
-    <HBox fx:id="upperPanel" managed="true">
+    <HBox fx:id="upperPanel">
         <TextField fx:id="loginField" HBox.hgrow="ALWAYS" promptText="Login"/>
         <PasswordField fx:id="passwordField" HBox.hgrow="ALWAYS"
                        promptText="password" onAction="#tryToAuth"/>

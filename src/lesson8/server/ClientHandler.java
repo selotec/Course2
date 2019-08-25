@@ -1,10 +1,11 @@
-package server;
+package lesson8.server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 
 public class ClientHandler {
     private Server server;
@@ -29,8 +30,13 @@ public class ClientHandler {
 //            System.out.println("socket.getRemoteSocketAddress() "+socket.getRemoteSocketAddress());
 
 
+            /*
+                Не понимаю, что делаю не так - задал таймаут сокету, обрабатываю исключение.
+                В блоке finally должны закрыть сокет по истечению таймаута, но этого не происходит.
+             */
             new Thread(() -> {
                 try {
+                    socket.setSoTimeout(2000);
                     // цикл авторизации
                     while (true) {
                         String str = in.readUTF();
@@ -40,6 +46,7 @@ public class ClientHandler {
                             String newNick = AuthService.getNickByLoginAndPass(token[1], token[2]);
                             if (newNick != null) {
                                 if(!server.isLoginAuthorised(token[1])){
+                                    socket.setSoTimeout(0);
                                     sendMSG("/authok "+newNick);
                                     nick = newNick;
                                     login = token[1];
@@ -70,6 +77,8 @@ public class ClientHandler {
                         }
                     }
 
+                } catch (SocketTimeoutException e) {
+                    System.out.println("Timed out");
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
