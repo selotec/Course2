@@ -1,16 +1,18 @@
-package lesson7.server;
+package server;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class ClientHandler {
     private Server server;
     private Socket socket;
     DataInputStream in;
     DataOutputStream out;
-    String nick;
+    private String nick;
+    private String login;
 
     public ClientHandler(Server server, Socket socket) {
         try {
@@ -18,6 +20,14 @@ public class ClientHandler {
             this.socket = socket;
             in = new DataInputStream(socket.getInputStream());
             out = new DataOutputStream(socket.getOutputStream());
+
+//            System.out.println("socket.getPort() "+ socket.getPort());
+//            System.out.println("socket.getLocalPort() "+socket.getLocalPort());
+//
+//            System.out.println("socket.getInetAddress() "+socket.getInetAddress());
+//            System.out.println("socket.getLocalSocketAddress() "+socket.getLocalSocketAddress());
+//            System.out.println("socket.getRemoteSocketAddress() "+socket.getRemoteSocketAddress());
+
 
             new Thread(() -> {
                 try {
@@ -29,11 +39,16 @@ public class ClientHandler {
 //                            String[] token = str.split(" +",3);
                             String newNick = AuthService.getNickByLoginAndPass(token[1], token[2]);
                             if (newNick != null) {
-                                sendMSG("/authok");
-                                nick = newNick;
-                                server.subscribe(this);
-                                System.out.println("Клиент " + nick + " авторизовался");
-                                break;
+                                if(!server.isLoginAuthorised(token[1])){
+                                    sendMSG("/authok "+newNick);
+                                    nick = newNick;
+                                    login = token[1];
+                                    server.subscribe(this);
+                                    System.out.println("Клиент " + nick + " авторизовался");
+                                    break;
+                                }else{
+                                    sendMSG("Учетная запись уже используется");
+                                }
                             } else {
                                 sendMSG("Неверный логин / пароль");
                             }
@@ -42,20 +57,19 @@ public class ClientHandler {
                     //цикл работы
                     while (true) {
                         String str = in.readUTF();
-                        // О чем говорилось в конце вебинара - при помощи limit отделяем сообщение от служебных команд
-                        String[] whisper = str.split(" ", 3);
-                        // Если клиент запросил отправку приватного сообщения
-                        if (whisper[0].equals("/w")) {
-                            // Просим сервер переслать сообщение только адресату
-                            server.proxyPrivateMessage(whisper[2], whisper[1]);
-                            continue;
-                        }
                         if (str.equals("/end")) {
+                            sendMSG("/end");
                             break;
                         }
 
-                        server.broadcastMsg(nick + " : " + str);
+                        if (str.startsWith("/w")) {
+                            String[] token = str.split(" +", 3);
+                            server.broadcastMsg(token[2], nick, token[1]);
+                        }else {
+                            server.broadcastMsg(str, nick);
+                        }
                     }
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 } finally {
@@ -82,4 +96,11 @@ public class ClientHandler {
         }
     }
 
+    public String getNick() {
+        return nick;
+    }
+
+    public String getLogin() {
+        return login;
+    }
 }

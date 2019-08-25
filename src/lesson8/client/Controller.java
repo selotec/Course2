@@ -1,16 +1,23 @@
-package lesson7.client;
+package client;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.fxml.Initializable;
+import javafx.scene.control.ListView;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 public class Controller {
     @FXML
@@ -25,8 +32,12 @@ public class Controller {
     public HBox upperPanel;
     @FXML
     public HBox bottomPanel;
+    @FXML
+    public ListView clientList;
 
     private boolean isAuthorized;
+    private String nick;
+    private Stage stage;
 
 
     Socket socket;
@@ -38,27 +49,25 @@ public class Controller {
 
     public void setAuthorized(boolean authorized) {
         isAuthorized = authorized;
-        if(isAuthorized){
+        if (isAuthorized) {
             upperPanel.setVisible(false);
+            upperPanel.setManaged(false);
             bottomPanel.setVisible(true);
-        } else{
+            bottomPanel.setManaged(true);
+            clientList.setVisible(true);
+            clientList.setManaged(true);
+        } else {
             upperPanel.setVisible(true);
+            upperPanel.setManaged(true);
             bottomPanel.setVisible(false);
+            bottomPanel.setManaged(false);
+            clientList.setVisible(false);
+            clientList.setManaged(false);
         }
-
     }
 
-    /*
-        Пытался создать текстовый лейбл, в который можно было бы передавать никнейм (чтоб не путаться между окнами клиентов).
-        Клиент хэндлер возвращал ответ вида /authok nick1, я разбивал эту строку, чтобы получить никнейм.
-        Далее менялся текст лейбла, лейбл делался видимым.
-        Но при запуске получил исключение - java.lang.IllegalStateException: Not on FX application thread
-        На стековерфлоу говорят нужно использовать Platform.runLater(new Runnable(),
-        например тут https://stackoverflow.com/questions/49343256/threads-in-javafx-not-on-fx-application-thread
-        Но так и не понял, почему например textArea мы спокойно меняем, а при изменении лейбла получаем исключение.
-     */
 
-    public void connect(){
+    public void connect() {
         try {
             socket = new Socket(IP_ADRESS, PORT);
             in = new DataInputStream(socket.getInputStream());
@@ -69,16 +78,33 @@ public class Controller {
                     //цикл авторизации
                     while (true) {
                         String str = in.readUTF();
-                        if(str.equals("/authok")){
+                        if (str.startsWith("/authok")) {
                             setAuthorized(true);
+                            nick = str.split(" ")[1];
                             break;
                         }
                         textArea.appendText(str + "\n");
                     }
+                    showUserNick();
                     // цикл работы
                     while (true) {
                         String str = in.readUTF();
-                        textArea.appendText(str + "\n");
+                        if (str.startsWith("/")) {
+                            if (str.equals("/end")) {
+                                break;
+                            }
+                            if (str.startsWith("/clientlist ")) {
+                                String[] token = str.split(" ");
+                                Platform.runLater(() -> {
+                                    clientList.getItems().clear();
+                                    for (int i = 1; i < token.length; i++) {
+                                        clientList.getItems().add(token[i]);
+                                    }
+                                });
+                            }
+                        } else {
+                            textArea.appendText(str + "\n");
+                        }
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -108,15 +134,36 @@ public class Controller {
     }
 
     public void tryToAuth(ActionEvent actionEvent) {
-        if (socket == null || socket.isClosed()){
+        if (socket == null || socket.isClosed()) {
             connect();
         }
         try {
-            out.writeUTF("/auth "+ loginField.getText()+" "+ passwordField.getText());
+            out.writeUTF("/auth " + loginField.getText() + " " + passwordField.getText());
             loginField.clear();
             passwordField.clear();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void showUserNick() {
+        Platform.runLater(() -> {
+            stage = (Stage) textField.getScene().getWindow();
+            stage.setTitle("Super chat : " + nick);
+            stage.setOnCloseRequest(event -> {
+                System.out.println("buy");
+                try {
+                    out.writeUTF("/end");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            });
+        });
+    }
+
+    public void clickClientList(MouseEvent mouseEvent) {
+//        System.out.println(clientList.getSelectionModel().getSelectedItem());
+        String receiver = (String) clientList.getSelectionModel().getSelectedItem();
+        textField.setText("/w " + receiver + " ");
     }
 }
